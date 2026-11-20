@@ -1,0 +1,169 @@
+{
+  "active": false,
+  "connections": {
+    "Extract Gemini Reply": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Telegram Send Message",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Google Gemini (AI Studio)": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Extract Gemini Reply",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "Google Gemini (AI Studio)",
+            "type": "main"
+          }
+        ]
+      ]
+    }
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "name": "Telegram Gemini Chatbot",
+  "nodes": [
+    {
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_TELEGRAM_CREDENTIAL_ID",
+          "name": "Telegram account"
+        }
+      },
+      "id": "8230ac4f-a4b4-49c7-9761-46e3b7ab5991",
+      "name": "Telegram Trigger",
+      "parameters": {
+        "options": {},
+        "updates": [
+          "message"
+        ]
+      },
+      "position": [
+        240,
+        300
+      ],
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "webhookId": "telegram-gemini-chatbot-trigger"
+    },
+    {
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_GEMINI_CREDENTIAL_ID",
+          "name": "Google Gemini API Key"
+        }
+      },
+      "id": "3e48d4aa-5329-42a3-a295-cc84b7b07e53",
+      "name": "Google Gemini (AI Studio)",
+      "notes": "Calls the Gemini API from Google AI Studio. Create an HTTP Header Auth credential in n8n with Name: X-goog-api-key and Value: your Gemini API key (starts with AIza). Stateless in v1 - each message is answered on its own.",
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "jsonBody": "={{ JSON.stringify({ contents: [{ parts: [{ text: $json.message.text }] }], generationConfig: { temperature: 0.7, maxOutputTokens: 1024 } }) }}",
+        "method": "POST",
+        "options": {
+          "timeout": 30000
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
+      },
+      "position": [
+        480,
+        300
+      ],
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2
+    },
+    {
+      "id": "646dd5aa-094c-4c94-baa4-2f7d681b8001",
+      "name": "Extract Gemini Reply",
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "assign-chat-id",
+              "name": "chat_id",
+              "type": "number",
+              "value": "={{ $('Telegram Trigger').item.json.message.chat.id }}"
+            },
+            {
+              "id": "assign-reply-text",
+              "name": "reply_text",
+              "type": "string",
+              "value": "={{ $json.candidates[0].content.parts.map(part => part.text).join('') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "position": [
+        720,
+        300
+      ],
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4
+    },
+    {
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_TELEGRAM_CREDENTIAL_ID",
+          "name": "Telegram account"
+        }
+      },
+      "id": "1acac196-eaa1-461a-9e8c-284bbcb47b9c",
+      "name": "Telegram Send Message",
+      "parameters": {
+        "additionalFields": {
+          "appendAttribution": false
+        },
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.reply_text }}"
+      },
+      "position": [
+        960,
+        300
+      ],
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "webhookId": "telegram-gemini-send"
+    }
+  ],
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true
+  },
+  "tags": [
+    {
+      "name": "telegram"
+    },
+    {
+      "name": "gemini"
+    },
+    {
+      "name": "chatbot"
+    }
+  ],
+  "versionId": "telegram-gemini-chatbot-v1"
+}
