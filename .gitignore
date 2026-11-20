@@ -1,10 +1,7 @@
-# Keys and local files — never commit these
-.env
-.venv/
-__pycache__/
-*.py[cod]
-
 # Editor / OS noise
 .vscode/
 .idea/
 .DS_Store
+
+# Never commit an exported workflow that contains real credentials.
+# The workflow JSON in this repo uses placeholders only — keep it that way.
